@@ -1,6 +1,11 @@
 # QAKTIV Harvesting Tools
 
-## Fetch publication metadata from EconBiz
+
+## EconBiz
+
+[API Documentation](https://api.econbiz.de/doc)
+
+**Example:**
 
 ```
 $ python3 fetch_econbiz.py -o tmp.json
