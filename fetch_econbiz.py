@@ -42,4 +42,4 @@ if args.output:
     with open(args.output, 'w') as outfile:
         json.dump(records, outfile)
 else:
-    print(records)
+    print(json.dumps(records, indent=4))

@@ -3,8 +3,8 @@
 ## Fetch publication metadata from EconBiz
 
 ```
-$ python3 fetch_econbiz.py -q "COVID-19 OR SARS" -o tmp.json
-Found 3264 records for query 'COVID-19 OR SARS-COV-2'.
-Fetching record data: 100%|█████████████████████████████████████████████
+$ python3 fetch_econbiz.py -o tmp.json
+Found 3241 records for query 'COVID-19'.
+Fetching record data: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 13/13 [00:04<00:00,  3.12it/s]
 Saving records to 'tmp.json'.
 ```
