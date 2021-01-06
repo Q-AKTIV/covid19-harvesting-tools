@@ -20,8 +20,21 @@ import sys
 import pandas as pd
 from tqdm import tqdm
 
-from qgraph.utils import filter_by_top_counts
-from qgraph.preprocessing import strip_mesh_qualifier
+def filter_by_top_counts(dataframe, col, keep):
+    if isinstance(keep, float):
+        assert keep > 0. and keep < 1.
+        n_distinct = dataframe[col].nunique()
+        keep = int(keep * n_distinct)
+        print("Keeping {} of {} distinct {} values".format(keep, n_distinct, col))
+    assert isinstance(keep, int), "Put int or float to make this work"
+    top_items = pd.value_counts(dataframe[col], sort=True, ascending=False).index[:keep]
+    return dataframe[dataframe[col].isin(top_items)]
+
+
+def strip_mesh_qualifier(meshterm):
+    """ Strip off qualifier terms from mesh terms,
+    which are usually appended with a slash '/' """
+    return meshterm.split('/')[0].strip()
 
 
 def strip_qualifier_terms(meshterms):
