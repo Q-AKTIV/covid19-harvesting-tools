@@ -21,7 +21,7 @@ import csv
 
 # curl is needed for the subprocess:
 def check_references(row, curl_command, csv_writer):
-        doi = row['paper_id']
+        doi = row['doi']
 
         result = subprocess.run(f"{curl_command} https://api.crossref.org/works/{doi} --output tmp.json".split())
         logging.info(result)
@@ -29,7 +29,18 @@ def check_references(row, curl_command, csv_writer):
         with jsonlines.open('./tmp.json') as reader:
             for obj in reader:
 
+# harvest only references  from Crossref
+
+                for reference in obj['message']['reference']:
+                    reference_to = reference.get('DOI')
+                    infos = doi, reference_to
+                    print('INFOS:', infos)
+                    csv_writer.writerow(infos)
+
+
+
 # harvest publication title and ISSN from Crossref
+                '''
                 for paper in obj['message']['ISSN']:
                     issn = paper
                 for titel  in obj['message']['title']:
@@ -39,18 +50,19 @@ def check_references(row, curl_command, csv_writer):
 
                     print('paper_id, issn:', infos)
                     csv_writer.writerow(infos)
-
+                
 
 # harvest ISSN from Crossref
-                '''
+                
                 for paper in obj['message']['ISSN']:
                     issn = paper
                     infos = doi, issn
                     print('paper_id, issn:', infos)
                     csv_writer.writerow(infos)
-                '''
+                
+
 # harvest references and journal names from Crossref
-                '''
+                
                 for reference in obj['message']['reference']:
                     reference_to = reference.get('DOI')
                     if 'journal-title' in reference.keys():
@@ -60,9 +72,9 @@ def check_references(row, curl_command, csv_writer):
                     infos = doi, reference_to, journal
                     print('INFOS:', infos)
                     csv_writer.writerow(infos)
-                '''
+                
 # harvest name (given, family) and ORCIDs from Crossref
-                '''
+                
                 for author in obj['message']['author']:
                     given = author.get('given')
                     family = author.get('family')
@@ -87,27 +99,28 @@ def main():
         csv_writer = csv.writer(csvfile)
 
 # harvest Title, Publikationsdatum, ISSN-L
-        csv_writer.writerow(['paper_id', 'title', 'publ_date', 'ISSN-L'])
+        #csv_writer.writerow(['paper_id', 'title', 'publ_date', 'ISSN-L'])
 
 
 # harvest ISSN paper paper with paper_id (=DOI)
-        #csv_writer.writerow(['paper_id', 'ISSN'])
+        #csv_writer.writerow(['paper_id','title', 'ISSN'])
 
 # uncomment for harvest references and journal names from Crossref
-        #csv_writer.writerow(['doi', 'reference_to_doi', 'journal'])
+        csv_writer.writerow(['paper_id', 'reference_to_doi'])
 
 # harvest name (given, family) and ORCIDs from Crossref
         #csv_writer.writerow(['paper_id', 'authors', 'orcid'])
-        input = read_csv(args.input_file_csv)
+        col_list = ['doi']
+        input = read_csv(args.input_file_csv, usecols=col_list)
         input = input.drop_duplicates()
         for index, row in input.iterrows():
             try:
-                if row['paper_id']:
+                if row['doi']:
                     check_references(row, args.curl_command, csv_writer)
                     #print('main', row['doi'])
 
             except Exception as e:
                 print ('Exception', e)
 
-
+    print('done')
 main()
