@@ -69,13 +69,15 @@ def main():
 
     papers = []
     paper_author = []
-    paper_keyword = []
     paper_mesh = []
 
     for infile in args.infile:
         with open(infile, 'r') as xmlfile:
             xmldata = xmltodict.parse(xmlfile.read())
-            records = xmldata['zs:searchRetrieveResponse']['zs:records']
+            try:
+                records = xmldata['zs:searchRetrieveResponse']['zs:records']
+            except KeyError:
+                print(f"[skipping] '{infile}' does not match expected format, no 'searchRetrieveResponse' or no 'zs:records'")
 
         for record in tqdm(records['zs:record'], desc=infile):
             num_records += 1
@@ -129,24 +131,23 @@ def main():
                 for meshterm in meshterms:
                     paper_mesh.append((record_id, meshterm))
 
-    print("Dropping author keywords that appear only once")
-    paper_concept = paper_mesh + paper_keyword
 
     df_paper = pd.DataFrame(papers,
                             columns=['paper_id', 'doi', 'publdate', 'title'])
-    df_paper.set_index('paper_id', inplace=True)
+    df_paper.set_index('doi', inplace=True)
     # Days granularity is enough
-    df_paper['publdate'] = pd.to_datetime(df_paper['publdate'],
-                                          format='%Y-%m-%d', exact=False)
-    print(df_paper)
+    # df_paper['publdate'] = pd.to_datetime(df_paper['publdate'],
+    #                                       format='%Y-%m-%d', exact=False)
+    df_paper['publdate'] = pd.to_datetime(df_paper['publdate'])
+    print(df_paper.head())
 
-    df_paper_concept = pd.DataFrame(paper_concept,
+    df_paper_concept = pd.DataFrame(paper_mesh,
                                     columns=['paper_id', 'concept'])
-    print(df_paper_concept)
+    print(df_paper_concept.head())
 
     df_paper_author = pd.DataFrame(paper_author,
                                    columns=['paper_id', 'author'])
-    print(df_paper_author)
+    print(df_paper_author.head())
 
 
 
