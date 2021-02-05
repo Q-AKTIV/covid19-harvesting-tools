@@ -40,3 +40,6 @@ Saving results to /mnt/2021_covid++/ke_data_rel/
 Counter({'MedlineTANorm': 59730, 'DOI': 59730, 'ISSN': 59730, 'LANGUAGE': 59730, 'DATABASE': 59730, 'sortyear': 59730, 'ARTICLELANGUAGE': 59730, 'classification': 59730, 'DBDOCTYPE': 59730, 'DOCTYPE': 59730, 'bibkey': 59730, 'PUBLYEAR': 59730, 'RECORDDATE': 59730, 'PUBLDATE': 59730, 'MESH': 59730, 'DBRECORDID': 59730, 'PUBLCOUNTRY': 59730, 'SOURCE': 59730, 'MedlineTA': 59729, 'ZSTA': 59720, 'VOLUME': 59718, 'TITLE': 59580, 'AUTHOR': 59184, 'EISSN': 57546, 'LISTTAG': 57169, 'PAGES': 55908, 'KEYWORDS': 54741, 'PISSN': 53478, 'ZBMED_OPAC_KATKEY': 53128, 'ZDBID': 53081, 'ISSUE': 50786, 'SIGNATURE': 44582, 'ACCESS': 40587, 'ABSTRACT': 36361, 'CHEM': 19279, 'TITLETRANSLAT': 2115})
 ```
 
+## Get author data for preprints from CrossRef
+
+## Get references for preprints and KE publications from CrossRef

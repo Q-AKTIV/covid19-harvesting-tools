@@ -111,15 +111,16 @@ def main():
             num_valid += 1
             schema.update(obj.keys())
 
-            record_id = obj['DBRECORDID']
+            # We use DOI as key
+            # record_id = obj['DBRECORDID']
             doi = obj.get('DOI', '')
             title = obj.get('TITLE', '')
             date = sf(obj['PUBLDATE'])[0] if 'PUBLDATE' in obj else ''
-            papers.append((record_id, doi, date, title))
+            papers.append((doi, date, title))
 
             if 'AUTHOR' in obj:
                 for author in sf(obj['AUTHOR']):
-                    paper_author.append((record_id, author))
+                    paper_author.append((doi, author))
 
             if 'MESH' in obj:
                 meshterms = sf(obj['MESH'])
@@ -129,12 +130,12 @@ def main():
                     meshterms = list(set(meshterms))
 
                 for meshterm in meshterms:
-                    paper_mesh.append((record_id, meshterm))
+                    paper_mesh.append((doi, meshterm))
 
 
     df_paper = pd.DataFrame(papers,
-                            columns=['paper_id', 'doi', 'publdate', 'title'])
-    df_paper.set_index('doi', inplace=True)
+                            columns=['paper_id', 'publdate', 'title'])
+    df_paper.set_index('paper_id', inplace=True)
     # Days granularity is enough
     # df_paper['publdate'] = pd.to_datetime(df_paper['publdate'],
     #                                       format='%Y-%m-%d', exact=False)

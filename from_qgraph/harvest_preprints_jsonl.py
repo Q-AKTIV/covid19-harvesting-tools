@@ -19,7 +19,7 @@ from tqdm import tqdm
 import pandas as pd
 
 
-Publication = namedtuple('Publication', ['id', 'publdate', 'title', 'abstract'])
+Publication = namedtuple('Publication', ['doi', 'publdate', 'title'])
 Annotation = namedtuple('Annotation', ['id', 'concept'])
 
 def main():
@@ -36,8 +36,7 @@ def main():
             paper_records.append(
                 Publication(obj["id"],
                             obj["date"],
-                            obj["title"],
-                            obj["abstract"])
+                            obj["title"])
             )
 
             # Make concepts unique!
