@@ -27,7 +27,12 @@ curl "http://z3950.zbmed.de:6210/livivo?version=2.0&operation=searchRetrieve&que
 
 ## Harvest retrieved publications
 
+### Command
 
 ```
 python3 from_qgraph/harvest_livivo_covid19.py /mnt/2021_covid++/ke_data/*.xml --recent --require_publdate --require_mesh --require_doi --strip-mesh-qualifiers --save /mnt/2021_covid++/ke_data_rel/
 ```
+
+### Notes
+
+- [skipping] '/mnt/2021_covid++/ke_data/320001.xml' does not match expected format, no 'searchRetrieveResponse' or no 'zs:records'
