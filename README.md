@@ -27,6 +27,7 @@ curl "http://z3950.zbmed.de:6210/livivo?version=2.0&operation=searchRetrieve&que
 
 ## Harvest retrieved publications
 
-See
 
-`from_qgraph/harvest_livivo_covid19.py 
+```
+python3 from_qgraph/harvest_livivo_covid19.py /mnt/2021_covid++/ke_data/*.xml --recent --require_publdate --require_mesh --require_doi --strip-mesh-qualifiers --save /mnt/2021_covid++/ke_data_rel/
+```
