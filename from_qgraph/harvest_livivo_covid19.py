@@ -26,8 +26,10 @@ from tqdm import tqdm
 import xmltodict
 import pandas as pd
 
-from qgraph.preprocessing import tokenize_keywords
-from qgraph.preprocessing import strip_mesh_qualifier
+def strip_mesh_qualifier(meshterm):
+    """ Strip off qualifier terms from mesh terms,
+    which are usually appended with a slash '/' """
+    return meshterm.split('/')[0].strip()
 
 def sf(field):
     """ Split field """
@@ -51,7 +53,9 @@ def main():
                         default=False, action='store_true')
     parser.add_argument("--require-publdate", help='Use only records with publdate',
                         default=False, action='store_true')
-    parser.add_argument("--mesh-only", help='Use only publications with MESH terms, and only extract mesh terms ',
+    parser.add_argument("--require_mesh", help='Use only publications with MESH terms, and only extract mesh terms ',
+                        default=False, action='store_true')
+    parser.add_argument("--require_doi", help='Use only publications with a DOI',
                         default=False, action='store_true')
     parser.add_argument("--strip-mesh-qualifiers",
                         help="Strip mesh qualifier terms (appended via '/')",
@@ -93,11 +97,18 @@ def main():
                                      format='%Y-%m-%d', exact=False)
                 # print(obj['PUBLDATE'], '=>', tmp)
 
-            if args.mesh_only:
+            if args.require_mesh:
                 if 'MESH' not in obj or not obj['MESH']:
                     # Skip, if no MESH or MESH empty
                     continue
 
+            if args.require_doi:
+                if "DOI" not in obj or not obj["DOI"]:
+                    continue
+                else:
+                    # DEBUG
+                    print(obj["DOI"])
+                    input()
             # Records
             num_valid += 1
             schema.update(obj.keys())
@@ -112,18 +123,8 @@ def main():
                 for author in sf(obj['AUTHOR']):
                     paper_author.append((record_id, author))
 
-            if not args.mesh_only:
-                if 'KEYWORDS' in obj:
-                    for keyword in tokenize_keywords(obj['KEYWORDS'],
-                                                    normalize=True,
-                                                    split_on=[' ; ',
-                                                            ' -- ',
-                                                            ' > ',
-                                                            ',']):
-                        paper_keyword.append((record_id, keyword))
-                paper_keyword = filter_min_count(paper_keyword, 2)
-
             if 'MESH' in obj:
+                print(obj['MESH'])
                 meshterms = sf(obj['MESH'])
                 if args.strip_mesh_qualifiers:
                     meshterms = [strip_mesh_qualifier(m) for m in meshterms]
