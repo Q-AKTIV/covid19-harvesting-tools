@@ -51,7 +51,7 @@ def main():
     parser.add_argument("infile", nargs='+')
     parser.add_argument("--recent", help='Consider only 2020 records',
                         default=False, action='store_true')
-    parser.add_argument("--require-publdate", help='Use only records with publdate',
+    parser.add_argument("--require_publdate", help='Use only records with publdate',
                         default=False, action='store_true')
     parser.add_argument("--require_mesh", help='Use only publications with MESH terms, and only extract mesh terms ',
                         default=False, action='store_true')
