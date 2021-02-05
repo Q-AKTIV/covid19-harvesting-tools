@@ -93,8 +93,7 @@ def main():
                 if 'PUBLDATE' not in obj:
                     continue
                 # Raise if cant be converted
-                __tmp = pd.to_datetime(obj['PUBLDATE'], errors='raise',
-                                     format='%Y-%m-%d', exact=False)
+                # tmp = pd.to_datetime(obj['PUBLDATE'], errors='raise', exact=False)
                 # print(obj['PUBLDATE'], '=>', tmp)
 
             if args.require_mesh:
@@ -105,10 +104,7 @@ def main():
             if args.require_doi:
                 if "DOI" not in obj or not obj["DOI"]:
                     continue
-                else:
-                    # DEBUG
-                    print(obj["DOI"])
-                    input()
+
             # Records
             num_valid += 1
             schema.update(obj.keys())
@@ -116,7 +112,7 @@ def main():
             record_id = obj['DBRECORDID']
             doi = obj.get('DOI', '')
             title = obj.get('TITLE', '')
-            date = obj.get('PUBLDATE', '')
+            date = sf(obj['PUBLDATE'])[0] if 'PUBLDATE' in obj else ''
             papers.append((record_id, doi, date, title))
 
             if 'AUTHOR' in obj:
@@ -124,7 +120,6 @@ def main():
                     paper_author.append((record_id, author))
 
             if 'MESH' in obj:
-                print(obj['MESH'])
                 meshterms = sf(obj['MESH'])
                 if args.strip_mesh_qualifiers:
                     meshterms = [strip_mesh_qualifier(m) for m in meshterms]
