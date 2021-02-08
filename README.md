@@ -51,6 +51,10 @@ Counter({'MedlineTANorm': 59730, 'DOI': 59730, 'ISSN': 59730, 'LANGUAGE': 59730,
 
 - MESH annotations are still identifiers and not terms... need to be mapped
 
+## Resolve MESH Identifiers from preprints to MeSH main subject headings (in text format)
+
+TODO: Tetyana
+
 ## Get author data for preprints from CrossRef
 
 ## Get references for preprints and KE publications from CrossRef
