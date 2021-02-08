@@ -19,8 +19,8 @@ from tqdm import tqdm
 import pandas as pd
 
 
-Publication = namedtuple('Publication', ['doi', 'publdate', 'title'])
-Annotation = namedtuple('Annotation', ['id', 'concept'])
+Publication = namedtuple('Publication', ['paper_id', 'publdate', 'title'])
+Annotation = namedtuple('Annotation', ['paper_id', 'concept'])
 
 def main():
     parser = argparse.ArgumentParser()
@@ -40,7 +40,7 @@ def main():
             )
 
             # Make concepts unique!
-            concepts = {entity['concept'] for entity in obj['entities']}
+            concepts = {entity['concept'] for entity in obj['ents']}
 
             # Add one annotation per unique concept
             annot_records.extend(
@@ -52,7 +52,7 @@ def main():
 
     # Put records into dataframes
     df_paper = pd.DataFrame(paper_records, columns=Publication._fields)
-    df_paper.set_index("id", inplace=True)
+    df_paper.set_index("paper_id", inplace=True, drop=True)
     df_annot = pd.DataFrame(annot_records, columns=Annotation._fields)
 
     if args.save:
