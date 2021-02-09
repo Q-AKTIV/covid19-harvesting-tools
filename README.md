@@ -16,13 +16,16 @@ Saving records to 'tmp.json'.
 
 ## COVID+++
 
-### Retrieval of publications from ZB MED-KE 
+### Retrieval of publications from ZB MED-KE: Keyword=Covid-19 in year 2020
 - annotated with keyword "covid19" in publication-year 2020
 - 2021-02-01: number of 437073 papers (558392 without restriction on publication year 2020)
 - see Shell-Script: SRU-KE_subject-covid19_date-2020.sh 
  
 ```
 curl "http://z3950.zbmed.de:6210/livivo?version=2.0&operation=searchRetrieve&query=dc.subject=covid19%20AND%20dc.date=2020&facetLimit=0&startRecord=[1-558392:5000]&recordSchema=xml&x-username=zbmintern&maximumRecords=5000" -O "2021_ZBMED-COVID19-#1.xml" 
+```
+```
+bash SRU-KE_subject-covid19_date-2020.sh
 ```
 
 ## Harvest retrieved **KE publications**
@@ -49,12 +52,33 @@ Counter({'MedlineTANorm': 59730, 'DOI': 59730, 'ISSN': 59730, 'LANGUAGE': 59730,
 
 ### Notes
 
-- MESH annotations are still identifiers and not terms... need to be mapped
+- MESH annotations are still identifiers () and not terms (concepts)... need to be mapped
 
 ## Resolve MESH Identifiers from preprints to MeSH main subject headings (in text format)
 
 TODO: Tetyana
 
-## Get author data for preprints from CrossRef
+
+ 
+ 
 
 ## Get references for preprints and KE publications from CrossRef
+```
+python3 crossref-harvesting.py input.csv output.csv
+```
+
+## Get author names and ORCID-IDs for primary publications, references and preprints from CrossRef
+ Needs to be performed two times for 'paper_id' and 'reference_to_doi'; the column needs to be changed manually in code (sorry)
+```
+ python3 crossref-harvesting_authors.py input.csv output.csv
+```
+
+
+## Harvesting MeSH-Terms for References 
+ Works only in ZB MED-VPN 
+
+```
+python3 analysis/KE-solr_harvester_reference-to.py  input.csv output.csv 
+```
+
+
