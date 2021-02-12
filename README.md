@@ -56,7 +56,7 @@ Counter({'MedlineTANorm': 59730, 'DOI': 59730, 'ISSN': 59730, 'LANGUAGE': 59730,
 
 ## Resolve MESH Identifiers from preprints to MeSH main subject headings (in text format)
 
-TODO: Tetyana
+- MeSH identifiers of preprints are mapped to MeSH descriptors (concepts) with the mesh_identifiers.R script.
 
 
  
