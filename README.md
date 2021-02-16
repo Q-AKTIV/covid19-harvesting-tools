@@ -61,7 +61,7 @@ Counter({'MedlineTANorm': 59730, 'DOI': 59730, 'ISSN': 59730, 'LANGUAGE': 59730,
 
  
  
-##CrossRef
+## CrossRef
 ### Get references for preprints and KE publications 
 ```
 python3 crossref-harvesting.py input.csv output.csv
