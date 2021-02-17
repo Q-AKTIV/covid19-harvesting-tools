@@ -60,9 +60,9 @@ Counter({'MedlineTANorm': 59730, 'DOI': 59730, 'ISSN': 59730, 'LANGUAGE': 59730,
 
 
 ### Filter relevant documents from retrieved **KE publications**
-- Filter for year: 2020
-- Filter for doc_type: "ARTIKEL"
-- Filter for db_doc_type: "Case Reports","Clinical Conference","Clinical Study","Clinical Trial","Clinical Trial Protocol",
+- Filter for **year**: 2020
+- Filter for **doc_type**: "ARTIKEL"
+- Filter for **db_doc_type**: "Case Reports","Clinical Conference","Clinical Study","Clinical Trial","Clinical Trial Protocol",
                         " Clinical Trial, Phase I"," Clinical Trial, Phase II"," Clinical Trial, Phase III","Consensus Development Conference",
                         "Controlled Clinical Trial","Dataset","Evaluation Study","Introductory Journal Article","Journal Article"
 
