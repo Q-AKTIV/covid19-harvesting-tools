@@ -66,6 +66,10 @@ Counter({'MedlineTANorm': 59730, 'DOI': 59730, 'ISSN': 59730, 'LANGUAGE': 59730,
                         " Clinical Trial, Phase I"," Clinical Trial, Phase II"," Clinical Trial, Phase III","Consensus Development Conference",
                         "Controlled Clinical Trial","Dataset","Evaluation Study","Introductory Journal Article","Journal Article"
 
+### Filter out non-specific mesh annotations 
+- A list **nonspesific_mesh_annotations.txt** contains MeSH descriptors that are purposefully filtered out from the KE publications and Preprints data set, since they have too broad not specific meaning.
+
+
 ## CrossRef
 ### Get references for preprints and KE publications 
 ```
