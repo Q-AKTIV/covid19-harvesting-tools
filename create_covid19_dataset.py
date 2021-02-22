@@ -8,16 +8,26 @@ This script combines the data for:
 import argparse
 import pandas as pd
 
+def tee(*args, file=None):
+    """Print to stdout and append to file (if not None)"""
+    print(*args)
+    if file is not None:
+        with open(file, 'a') as fhandle:
+            print(*args, file=fhandle)
+
 class TrackChanges:
     """ Context Manager to track changes """
-    def __init__(self, dataframe=None, desc="", file=None):
+    def __init__(self, dataframe=None, desc="", logfile=None):
         self.desc = desc
         self.lens = []
         self.cols = []
-        self.file = file
+        self.logfile = logfile
         self.dataframe = dataframe
 
-    def __call__(self, df):
+    def __call__(self, df=None):
+        if df is None:
+            assert self.dataframe is not None
+            df = self.dataframe
         self.lens.append(len(df))
         self.cols.append(set(df.columns))
         return df
@@ -42,15 +52,13 @@ class TrackChanges:
                 has_changes = True
         return diff, has_changes
 
-    def _pair_diffstr(self, d):
-        if d[0] and d[1]:
-            return f"+{d[0]} -{d[1]}"
-        elif d[0]:
-            return f"+{d[0]}"
-        elif d[1]:
-            return f"-{d[1]}"
-        else:
-            return ""
+    def _pair_diffstr(self, pair):
+        s = []
+        if pair[0]:
+            s.append(f"+{pair[0]}")
+        if pair[1]:
+            s.append(f"-{pair[1]}")
+        return ' '.join(s)
 
     def _int_diff(self, numbers):
         if not numbers:
@@ -59,17 +67,14 @@ class TrackChanges:
         diff = [current]
         has_changes = False
         for new in numbers[1:]:
-            plusminus = current - new
+            plusminus = new - current
             if plusminus != 0:
                 has_changes = True
             diff.append(plusminus)
         return diff, has_changes
 
     def _tee(self, s):
-        print(s)
-        if self.file is not None:
-            with open(self.file, 'a') as logfile:
-                print(s, file=logfile)
+        tee(s, file=self.logfile)
 
     def __exit__(self, type, value, trackback):
         if self.dataframe is not None:
@@ -88,7 +93,7 @@ class TrackChanges:
         # Number of records
         lens_diff, lens_have_changes = self._int_diff(self.lens)
         if lens_have_changes:
-            lens_str = ' -> '.join(f"{l} ({d:+d})" for l, d in zip(self.lens, lens_diff))
+            lens_str = ' | '.join(f"{l} ({d:+d})" for l, d in zip(self.lens, lens_diff))
             s = f"[{self.desc}] Num records: {lens_str}"
             self._tee(s)
         elif self.lens:
@@ -97,15 +102,14 @@ class TrackChanges:
             self._tee(s)
 
 
-def ensure_referential_integrity(df_a, df_b, col_a='paper_id', col_b='paper_id'):
+def ensure_referential_integrity(df_a, df_b, left_col='paper_id', right_col=None,
+                                 inplace=False):
     """ Ensures that col_a of df_a is in col_b of df_b, else drops """
-    with TrackChanges(desc="Ref. Int.") as tc:
-        tc(df_a)
-        lhs = df_a[col_a]
-        rhs = df_b[col_b]
-        df_a = df_a.drop(df_a[~lhs.isin(rhs)].index)
-        tc(df_a)
-    return df_a
+    lhs = df_a[left_col]
+    rhs = df_b.index if right_col is None else df_b[right_col]
+    if not inplace:
+        return df_a.drop(df_a[~lhs.isin(rhs)].index)
+    df_a.drop(df_a[~lhs.isin(rhs)].index, inplace=True)
 
 def ensure_min_count_constraint(df: pd.DataFrame, col: str, threshold: int) -> pd.DataFrame:
     with TrackChanges(desc="Min Constr.") as tc:
@@ -131,54 +135,79 @@ def strip_qualifier(s):
     return s if '/' not in s else [s.index('/')]
 
 
+def load_dataframes(list_of_paths, **kwargs):
+    """ Read multiple csv files as dataframes, **kwargs are passed down """
+    print("Loading dataframes:", list_of_paths)
+    dfs = []
+    for path in list_of_paths:
+        df = pd.read_csv(path, **kwargs)
+        dfs.append(df)
+    return dfs
+
 def main():
     parser = argparse.ArgumentParser()
     # Papers (separate arg for each type, because different structure)
-    parser.add_argument('--publ_papers', required=True)
-    parser.add_argument('--preprint_papers', required=True)
-    parser.add_argument('--referenced_papers', required=True)
+    parser.add_argument('--paper_data', nargs='+', required=True)
+    parser.add_argument('--paper_data_sources', nargs='+', required=True)
 
     # Annotation (may be multiple files)
-    parser.add_argument('--annotation_data', nargs='+', required=False)
+    parser.add_argument('--annotation_data', nargs='+', required=False,
+                        default=[])
 
     # Authors (may be multiple files)
-    parser.add_argument('--author_data', nargs='+', required=False)
+    parser.add_argument('--author_data', nargs='+', required=False,
+                        default=[])
 
     # References (may be multiple files)
-    parser.add_argument('--reference_data', nargs='+', required=False)
+    parser.add_argument('--reference_data', nargs='+', required=False,
+                        default=[])
 
     # Thresholds
     parser.add_argument('--min_papers_per_annotation', default=1, type=int)
     parser.add_argument('--min_papers_per_author', default=2, type=int)
 
     args = parser.parse_args()
+    assert len(args.paper_data) == len(args.paper_data_sources), "Same number of paper data, and their source identifiers"
 
-    df_ke = pd.read_csv(args.publ_papers)
-    print("KE", df_ke.head())
-    df_pp = pd.read_csv(args.preprint_papers)
-    print("PP", df_pp.head())
-    df_cr = pd.read_csv(args.referenced_papers)
-    print("CR", df_cr.head())
+    paper_dfs = load_dataframes(args.paper_data)
 
-    # Add data source
-    with TrackChanges(df_ke, desc="Add data source: KE"):
-        df_ke['data_source'] = "KE"
+    for df, source_identifier in zip(paper_dfs, args.paper_data_sources):
+        assert 'data_source' not in df, "Data_source column already present"
+        with TrackChanges(df, desc="Add data source identifier"):
+            df['data_source'] = source_identifier
 
-    with TrackChanges(df_pp, desc="Add data source: PP"):
-        df_pp['data_source'] = "PP"
-
-    with TrackChanges(df_cr, desc="Add data source: CR"):
-        df_cr['data_source'] = "CR"
-
-    with TrackChanges(desc="Combine papers and drop duplicate DOIs") as track:
-        df_paper = pd.concat([df_ke, df_pp, df_cr], ignore_index=True)
-        track(df_paper)
+    df_paper = pd.concat(paper_dfs, ignore_index=True)
+    # Combine papers
+    with TrackChanges(df_paper, desc="Combine papers and drop duplicate DOIs"):
+        assert all('paper_id' in df for df in paper_dfs)
         # Drop duplicates with descending priority: KE > PP > CR
         df_paper.drop_duplicates(subset="paper_id", keep="first", inplace=True)
-        track(df_paper)
         df_paper.set_index("paper_id", drop=True, append=False,
                            inplace=True, verify_integrity=True)
-        track(df_paper)
+
+    if args.annotation_data:
+        # Annotations
+        annotation_dfs = load_dataframes(args.annotation_data)
+        df_annotation = pd.concat(annotation_dfs, ignore_index=True)
+        with TrackChanges(df_annotation, desc="Combine annotation data"):
+            df_annotation.drop_duplicates(keep="first", inplace=True)
+            df_annotation.reset_index(inplace=True)
+        # TODO apply Tetyana Filter
+
+    if args.author_data:
+        # Authors
+        author_dfs = load_dataframes(args.author_data, names=["paper_id","author", "orcid"])
+        df_author = pd.concat(author_dfs, ignore_index=True)
+        with TrackChanges(df_author, desc="Drop duplicate authors"):
+            df_author.drop_duplicates(keep="first", inplace=True)
+            df_author.reset_index(inplace=True)
+
+        with TrackChanges(df_author, desc="Ref. Int. (authors)"):
+            ensure_referential_integrity(df_author, df_paper, inplace=True)
+
+
+
+
 
 
 if __name__ == '__main__':
