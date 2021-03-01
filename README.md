@@ -81,12 +81,18 @@ Needs to be performed two times for 'paper_id' and 'reference_to_doi'; the colum
 Their are no ISSN for preprints as they are not published yet. 
 ```
 python3 crossref-harvesting_issn.py KE-publ_ref.csv KE-publ-ref_issn.csv
+
 ```
 
 ### Get author names and ORCID-IDs for primary publications, references and preprints 
 Needs to be performed two times for 'paper_id' and 'reference_to_doi'; the column needs to be changed manually in code (sorry)
 ```
  python3 crossref-harvesting_authors.py input.csv output.csv
+```
+
+### Get publication dates: online-publication-date and print-publication-date
+```
+python3 crossref-harvesting_title-date.py KE-publ_ref.csv KE-publ-ref_title-date.csv
 ```
 
 ## Harvest KE
