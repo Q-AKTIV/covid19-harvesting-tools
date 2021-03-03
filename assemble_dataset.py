@@ -167,7 +167,7 @@ def main():
         try:
             os.makedirs(args.output, exist_ok=False)
         except FileExistsError:
-            answer = input("Overwrite", args.output, "? [y/N]")
+            answer = input(f"Overwrite '{args.output}'? [y/N]")
             if answer.lower().startswith('y'):
                 os.makedirs(args.output, exist_ok=False)
             else:
