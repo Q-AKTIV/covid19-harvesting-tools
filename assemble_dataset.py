@@ -195,7 +195,7 @@ def main():
             df_annotation.drop_duplicates(keep="first", inplace=True)
             df_annotation.reset_index(inplace=True)
         with TrackChanges(df_annotation, desc="Remove qualifier terms", logfile=logfile):
-            df_annotation.subject = df.annotation.subject.map(strip_qualifier)
+            df_annotation.subject = df_annotation.subject.map(strip_qualifier)
         if args.min_papers_per_annotation:
             with TrackChanges(df_annotation, desc=f"Min papers per annotation: {args.min_papers_per_annotation}", logfile=logfile):
                 ensure_min_count_constraint(df_annotation, "subject", args.min_papers_per_annotation)
