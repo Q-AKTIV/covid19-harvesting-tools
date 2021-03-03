@@ -200,6 +200,7 @@ def main():
         annotation_dfs = load_dataframes(args.annotation_data, names=["paper_id", "subject"],
                 header=0)
         df_annotation = pd.concat(annotation_dfs, ignore_index=True)
+        print("Annotation tail", df_annotation.tail())
         with TrackChanges(df_annotation, desc="Drop NA / duplicates (annot)", logfile=logfile) as track:
             df_annotation.dropna(subset=["subject"], inplace=True)
             track(df_annotation)
