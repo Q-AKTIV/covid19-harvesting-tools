@@ -102,8 +102,8 @@ class TrackChanges:
             self._tee(s)
 
 
-def ensure_referential_integrity(df_a, df_b, left_col='paper_id', right_col=None,
-                                 inplace=False):
+def ensure_referential_integrity(df_a: pd.DataFrame, df_b: pd. DataFrame, left_col:str='paper_id', right_col=None,
+        inplace:bool=False):
     """ Ensures that col_a of df_a is in col_b of df_b, else drops """
     lhs = df_a[left_col]
     rhs = df_b.index if right_col is None else df_b[right_col]
@@ -111,17 +111,16 @@ def ensure_referential_integrity(df_a, df_b, left_col='paper_id', right_col=None
         return df_a.drop(df_a[~lhs.isin(rhs)].index)
     df_a.drop(df_a[~lhs.isin(rhs)].index, inplace=True)
 
-def ensure_min_count_constraint(df: pd.DataFrame, col: str, threshold: int) -> pd.DataFrame:
-    with TrackChanges(desc="Min Constr.") as tc:
-        tc(df)
-        counts = df[col].value_counts()
-        invalid_values = counts[counts < threshold].index
-        invalid_rows = df[df[col].isin(invalid_values)].index
-        df = df.drop(invalid_rows)
-        tc(df)
-    return df
+def ensure_min_count_constraint(df: pd.DataFrame, col: str, threshold: int, inplace:bool=False) -> pd.DataFrame:
+    counts = df[col].value_counts()
+    invalid_values = counts[counts < threshold].index
+    invalid_rows = df[df[col].isin(invalid_values)].index
+    if not inplace:
+        return df.drop(invalid_rows)
+    df.drop(invalid_rows, inplace=True)
 
 def fix_publdate(df):
+    print("[deprecation warning] Publdate should not be necessary, use dedicated script before...")
     assert 'publdate' in df
     with TrackChanges(desc="Publ. Date") as tc:
         tc(df)
@@ -163,11 +162,13 @@ def main():
                         default=[])
 
     # Thresholds
-    parser.add_argument('--min_papers_per_annotation', default=1, type=int)
-    parser.add_argument('--min_papers_per_author', default=2, type=int)
+    parser.add_argument('--min_papers_per_annotation', default=None, type=int) # default 20
+    parser.add_argument('--min_papers_per_author', default=None, type=int)  # default 2
 
     args = parser.parse_args()
     assert len(args.paper_data) == len(args.paper_data_sources), "Same number of paper data, and their source identifiers"
+
+    ### PAPERS ###
 
     paper_dfs = load_dataframes(args.paper_data)
 
@@ -185,25 +186,52 @@ def main():
         df_paper.set_index("paper_id", drop=True, append=False,
                            inplace=True, verify_integrity=True)
 
+    ### ANNOTATIONS ###
     if args.annotation_data:
-        # Annotations
-        annotation_dfs = load_dataframes(args.annotation_data)
+        annotation_dfs = load_dataframes(args.annotation_data, names=["paper_id", "subject"],
+                header=0)
         df_annotation = pd.concat(annotation_dfs, ignore_index=True)
-        with TrackChanges(df_annotation, desc="Combine annotation data"):
+        with TrackChanges(df_annotation, desc="Drop duplicates (annot)"):
             df_annotation.drop_duplicates(keep="first", inplace=True)
             df_annotation.reset_index(inplace=True)
-        # TODO apply Tetyana Filter
+        with TrackChanges(df_annotation, desc="Remove qualifier terms"):
+            df_annotation.subject = df.annotation.subject.map(strip_qualifier)
+        if args.min_papers_per_annotation:
+            with TrackChanges(df_annotation, desc=f"Min papers per annotation: {args.min_papers_per_annotation}"):
+                ensure_min_count_constraint(df_annotation, "subject", args.min_papers_per_annotation)
 
+    ### Author data
     if args.author_data:
-        # Authors
         author_dfs = load_dataframes(args.author_data, names=["paper_id","author", "orcid"])
         df_author = pd.concat(author_dfs, ignore_index=True)
+        with TrackChanges(df_author, desc="Drop NA authors"):
+            df_author.dropna(subset=["author"], inplace=True)
+            df_author.reset_index(inplace=True)
         with TrackChanges(df_author, desc="Drop duplicate authors"):
             df_author.drop_duplicates(keep="first", inplace=True)
             df_author.reset_index(inplace=True)
-
         with TrackChanges(df_author, desc="Ref. Int. (authors)"):
             ensure_referential_integrity(df_author, df_paper, inplace=True)
+
+        if args.min_papers_per_author:
+            with TrackChanges(df_author, desc=f"Ensure min papers per author: {args.min_papers_per_author}"):
+                ensure_min_count_constraint(df_author, "author", args.min_papers_per_author, inplace=True)
+
+
+    ### Reference data
+    if args.reference_data:
+        ref_dfs = load_dataframes(args.referenec_data, names=["paper_id","reference_to_doi"])
+        df_refs = pd.concat(ref_dfs, ignore_index=True)
+        with TrackChanges(df_refs, desc="Drop no target doi (refs)"):
+            df_refs.dropna(subset=["reference_to_doi"], inplace=True)
+            df_refs.reset_index(inplace=True)
+        with TrackChanges(df_refs, desc="Drop duplicate (refs)"):
+            df_refs.drop_duplicates(keep="first", inplace=True)
+            df_refs.reset_index(inplace=True)
+        with TrackChanges(df_author, desc="Ref. Int. (ref source)"):
+            ensure_referential_integrity(df_author, df_paper, left_col="paper_id", inplace=True)
+        with TrackChanges(df_author, desc="Ref. Int. (ref target)"):
+            ensure_referential_integrity(df_author, df_paper, left_col="reference_to_doi", inplace=True)
 
 
 
