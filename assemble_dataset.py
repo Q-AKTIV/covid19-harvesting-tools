@@ -191,11 +191,15 @@ def main():
         annotation_dfs = load_dataframes(args.annotation_data, names=["paper_id", "subject"],
                 header=0)
         df_annotation = pd.concat(annotation_dfs, ignore_index=True)
-        with TrackChanges(df_annotation, desc="Drop duplicates (annot)", logfile=logfile):
+        with TrackChanges(df_annotation, desc="Drop NA / duplicates (annot)", logfile=logfile) as track:
+            df_annotation.dropna(subset=["subject"], inplace=True)
+            track(df_annotation)
             df_annotation.drop_duplicates(keep="first", inplace=True)
             df_annotation.reset_index(inplace=True)
         with TrackChanges(df_annotation, desc="Remove qualifier terms", logfile=logfile):
             df_annotation.subject = df_annotation.subject.map(strip_qualifier)
+        with TrackChanges(df_annotation, desc="Ref. Int. (annotations)", logfile=logfile):
+            ensure_referential_integrity(df_annotation, df_paper, inplace=True)
         if args.min_papers_per_annotation:
             with TrackChanges(df_annotation, desc=f"Min papers per annotation: {args.min_papers_per_annotation}", logfile=logfile):
                 ensure_min_count_constraint(df_annotation, "subject", args.min_papers_per_annotation)
