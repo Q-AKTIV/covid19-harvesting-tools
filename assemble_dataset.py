@@ -164,7 +164,16 @@ def main():
 
     if args.output:
         print("Creating output dir", args.output)
-        os.makedirs(args.output, exist_ok=False)
+        try:
+            os.makedirs(args.output, exist_ok=False)
+        except FileExistsError:
+            answer = input("Overwrite", args.output, "? [y/N]")
+            if answer.lower().startswith('y'):
+                os.makedirs(args.output, exist_ok=False)
+            else:
+                print("Canceling.")
+                exit(0)
+
         logfile = os.path.join(args.output, "assembly-log.txt")
     else:
         print("No output path given -> performing dry run")
