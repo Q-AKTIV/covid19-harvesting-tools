@@ -169,15 +169,17 @@ def main():
         except FileExistsError:
             answer = input(f"Overwrite '{args.output}'? [y/N]")
             if answer.lower().startswith('y'):
-                os.makedirs(args.output, exist_ok=False)
+                os.makedirs(args.output, exist_ok=True)
             else:
                 print("Canceling.")
                 exit(0)
-
         logfile = os.path.join(args.output, "assembly-log.txt")
     else:
         print("No output path given -> performing dry run")
         logfile = None
+
+    # TEE ARGS into logfile
+    tee(args, file=logfile)
 
     ### PAPERS ###
     paper_dfs = load_dataframes(args.paper_data)
