@@ -103,4 +103,12 @@ python3 crossref-harvesting_title-date.py KE-publ_ref.csv KE-publ-ref_title-date
 python3 analysis/KE-solr_harvester_reference-to.py  input.csv output.csv 
 ```
 
+## Fix Dates
 
+- Manually added header row to `KE-preprints-ref_title-date.csv`, then:
+
+```bash
+ubuntu@q-aktiv:~/git/harvesting-tools$ python3 resolve_publdate.py /mnt/2021_covid++/KE-preprints-ref_title-date_with_header.csv -o /mnt/2021_covid++/KE-preprints-ref_title-date_DATEFIX.csv 
+```
+
+## Assemble Date
