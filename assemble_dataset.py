@@ -7,6 +7,7 @@ This script combines the data for:
 """
 import argparse
 import pandas as pd
+import os
 
 def tee(*args, file=None):
     """Print to stdout and append to file (if not None)"""
@@ -119,17 +120,6 @@ def ensure_min_count_constraint(df: pd.DataFrame, col: str, threshold: int, inpl
         return df.drop(invalid_rows)
     df.drop(invalid_rows, inplace=True)
 
-def fix_publdate(df):
-    print("[deprecation warning] Publdate should not be necessary, use dedicated script before...")
-    assert 'publdate' in df
-    with TrackChanges(desc="Publ. Date") as tc:
-        tc(df)
-        df = df.dropna(subset=['publdate'])
-        df.publdate = df.publdate.str.rstrip('-')
-        df.publdate = df.publdate.map(lambda s: s[:s.index('-')] if '--' in s else s)
-        tc(df)
-    return df
-
 def strip_qualifier(s):
     return s if '/' not in s else [s.index('/')]
 
@@ -165,21 +155,31 @@ def main():
     parser.add_argument('--min_papers_per_annotation', default=None, type=int) # default 20
     parser.add_argument('--min_papers_per_author', default=None, type=int)  # default 2
 
+
+    # OUTPUT
+    parser.add_argument('-o', '--output', default=None, help="Write assembled dataset to this path.")  
+
     args = parser.parse_args()
     assert len(args.paper_data) == len(args.paper_data_sources), "Same number of paper data, and their source identifiers"
 
+    if args.output:
+        print("Creating output dir", args.output)
+        os.makedirs(args.output, exist_ok=False)
+        logfile = os.path.join(args.output, "assembly-log.txt")
+    else:
+        print("No output path given -> performing dry run")
+        logfile = None
+
     ### PAPERS ###
-
     paper_dfs = load_dataframes(args.paper_data)
-
     for df, source_identifier in zip(paper_dfs, args.paper_data_sources):
         assert 'data_source' not in df, "Data_source column already present"
-        with TrackChanges(df, desc="Add data source identifier"):
+        with TrackChanges(df, desc="Add data source identifier", logfile=logfile):
             df['data_source'] = source_identifier
 
     df_paper = pd.concat(paper_dfs, ignore_index=True)
     # Combine papers
-    with TrackChanges(df_paper, desc="Combine papers and drop duplicate DOIs"):
+    with TrackChanges(df_paper, desc="Combine papers and drop duplicate DOIs", logfile=logfile):
         assert all('paper_id' in df for df in paper_dfs)
         # Drop duplicates with descending priority: KE > PP > CR
         df_paper.drop_duplicates(subset="paper_id", keep="first", inplace=True)
@@ -191,30 +191,30 @@ def main():
         annotation_dfs = load_dataframes(args.annotation_data, names=["paper_id", "subject"],
                 header=0)
         df_annotation = pd.concat(annotation_dfs, ignore_index=True)
-        with TrackChanges(df_annotation, desc="Drop duplicates (annot)"):
+        with TrackChanges(df_annotation, desc="Drop duplicates (annot)", logfile=logfile):
             df_annotation.drop_duplicates(keep="first", inplace=True)
             df_annotation.reset_index(inplace=True)
-        with TrackChanges(df_annotation, desc="Remove qualifier terms"):
+        with TrackChanges(df_annotation, desc="Remove qualifier terms", logfile=logfile):
             df_annotation.subject = df.annotation.subject.map(strip_qualifier)
         if args.min_papers_per_annotation:
-            with TrackChanges(df_annotation, desc=f"Min papers per annotation: {args.min_papers_per_annotation}"):
+            with TrackChanges(df_annotation, desc=f"Min papers per annotation: {args.min_papers_per_annotation}", logfile=logfile):
                 ensure_min_count_constraint(df_annotation, "subject", args.min_papers_per_annotation)
 
     ### Author data
     if args.author_data:
         author_dfs = load_dataframes(args.author_data, names=["paper_id","author", "orcid"])
         df_author = pd.concat(author_dfs, ignore_index=True)
-        with TrackChanges(df_author, desc="Drop NA authors"):
+        with TrackChanges(df_author, desc="Drop NA authors", logfile=logfile):
             df_author.dropna(subset=["author"], inplace=True)
             df_author.reset_index(inplace=True)
-        with TrackChanges(df_author, desc="Drop duplicate authors"):
+        with TrackChanges(df_author, desc="Drop duplicate authors", logfile=logfile):
             df_author.drop_duplicates(keep="first", inplace=True)
             df_author.reset_index(inplace=True)
-        with TrackChanges(df_author, desc="Ref. Int. (authors)"):
+        with TrackChanges(df_author, desc="Ref. Int. (authors)", logfile=logfile):
             ensure_referential_integrity(df_author, df_paper, inplace=True)
 
         if args.min_papers_per_author:
-            with TrackChanges(df_author, desc=f"Ensure min papers per author: {args.min_papers_per_author}"):
+            with TrackChanges(df_author, desc=f"Ensure min papers per author: {args.min_papers_per_author}", logfile=logfile):
                 ensure_min_count_constraint(df_author, "author", args.min_papers_per_author, inplace=True)
 
 
@@ -222,19 +222,27 @@ def main():
     if args.reference_data:
         ref_dfs = load_dataframes(args.referenec_data, names=["paper_id","reference_to_doi"])
         df_refs = pd.concat(ref_dfs, ignore_index=True)
-        with TrackChanges(df_refs, desc="Drop no target doi (refs)"):
+        with TrackChanges(df_refs, desc="Drop no target doi (refs)", logfile=logfile):
             df_refs.dropna(subset=["reference_to_doi"], inplace=True)
             df_refs.reset_index(inplace=True)
-        with TrackChanges(df_refs, desc="Drop duplicate (refs)"):
+        with TrackChanges(df_refs, desc="Drop duplicate (refs)", logfile=logfile):
             df_refs.drop_duplicates(keep="first", inplace=True)
             df_refs.reset_index(inplace=True)
-        with TrackChanges(df_author, desc="Ref. Int. (ref source)"):
+        with TrackChanges(df_author, desc="Ref. Int. (ref source)", logfile=logfile):
             ensure_referential_integrity(df_author, df_paper, left_col="paper_id", inplace=True)
-        with TrackChanges(df_author, desc="Ref. Int. (ref target)"):
+        with TrackChanges(df_author, desc="Ref. Int. (ref target)", logfile=logfile):
             ensure_referential_integrity(df_author, df_paper, left_col="reference_to_doi", inplace=True)
 
 
+    if not args.output:
+        print("Dry run finished. Exiting.")
 
+    print("Writing output to", args.output)
+    df_paper.to_csv(os.path.join(args.output, "paper.csv"), index=True)
+    df_author.to_csv(os.path.join(args.output, "authorship.csv"), index=False)
+    df_annotation.to_csv(os.path.join(args.output, "annotation.csv"), index=False)
+    df_refs.to_csv(os.path.join(args.output, "references.csv"), index=False)
+    print("Done.")
 
 
 
