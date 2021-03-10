@@ -112,3 +112,18 @@ ubuntu@q-aktiv:~/git/harvesting-tools$ python3 resolve_publdate.py /mnt/2021_cov
 ```
 
 ## Assemble Dataset
+
+``` 
+BASEDIR=/mnt/2021_covid++
+SCRIPTDIR=/home/ubuntu/git/harvesting-tools
+SUBJ_THRESHOLD=20
+AUTH_THRESHOLD=2
+OUTPUT="/mnt/2021_covid++/covid19++-subj$SUBJ_THRESHOLD-auth$AUTH_THRESHOLD"
+python3 $SCRIPTDIR/assemble_dataset.py --paper_data $BASEDIR/ke_data_rel/paper.csv $BASEDIR/preprints_rel/paper.csv $BASEDIR/KE-publ-ref_title-date_DATEFIX.csv $BASEDIR/KE-preprints-ref_title-date_DATEFIX.csv --paper_data_sources KE PP CR CR --annotation_data $BASEDIR/ke_data_rel/annotation.csv $BASEDIR/preprints_rel/annotation_mapped.csv $BASEDIR/KE-publ_ref_mesh.csv $BASEDIR/preprints_ref_mesh_202102.csv --author_data $BASEDIR/KE-publ_ref_authors.csv $BASEDIR/preprints_ref_authors.csv --reference_data $BASEDIR/KE-publ_ref.csv $BASEDIR/preprints_ref.csv --min_papers_per_annotation $SUBJ_THRESHOLD --min_papers_per_author $AUTH_THRESHOLD --output $OUTPUT
+```
+
+## Create graph from Dataset
+
+```
+(venv) ubuntu@q-aktiv:/mnt/2021_covid++$ ~/git/qgraph/bin/preprocess --add-references --authors include --ignore-title covid19++-subj20-auth2 -o covid19++-subj20-auth2-GRAPH
+```
