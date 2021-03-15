@@ -242,6 +242,9 @@ def main():
             ensure_referential_integrity(df_paper, df_author, inplace=True,
                                          right_col='paper_id')
 
+        with TrackChanges(df_annotation, desc="Ref. Int. (annotations -> papers)", logfile=logfile):
+            ensure_referential_integrity(df_annotation, df_paper, inplace=True, left_col='paper_id')
+
         if args.min_papers_per_author:
             with TrackChanges(df_author, desc=f"Ensure min papers per author: {args.min_papers_per_author}", logfile=logfile):
                 ensure_min_count_constraint(df_author, "author", args.min_papers_per_author, inplace=True)
