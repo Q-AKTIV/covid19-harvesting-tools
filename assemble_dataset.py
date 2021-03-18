@@ -196,7 +196,7 @@ def main():
     assert all('publdate' in df for df in paper_dfs)
     df_paper = pd.concat(paper_dfs, ignore_index=True, sort=False)
     # Combine papers
-    with TrackChanges(df_paper, desc="Drop NA titles drop duplicate DOIs", logfile=logfile) as track:
+    with TrackChanges(df_paper, desc="Drop NA titles/publdate, then drop duplicate DOIs", logfile=logfile) as track:
         # Drop duplicates with descending priority: KE > PP > CR
         df_paper.dropna(subset=["title", "publdate"], inplace=True)
         track(df_paper)
@@ -218,14 +218,14 @@ def main():
         with TrackChanges(df_annotation, desc="Ref. Int. (annotations -> papers)", logfile=logfile):
             ensure_referential_integrity(df_annotation, df_paper, inplace=True, left_col='paper_id')
 
-        with TrackChanges(df_annotation, desc="Ref. Int. (papers -> annotations)", logfile=logfile):
-            ensure_referential_integrity(df_paper, df_annotation, inplace=True,
-                                         right_col='paper_id')
-
         if args.min_papers_per_annotation:
             with TrackChanges(df_annotation, desc=f"Min papers per annotation: {args.min_papers_per_annotation}", logfile=logfile):
                 ensure_min_count_constraint(df_annotation, "subject", args.min_papers_per_annotation, inplace=True)
-        # df_annotation.reset_index(inplace=True)
+
+        with TrackChanges(df_annotation, desc="Ref. Int. (papers -> annotations) post-pruning", logfile=logfile):
+            # Remove papers that don't have any annotations left after pruning
+            ensure_referential_integrity(df_paper, df_annotation, inplace=True,
+                                         right_col='paper_id')
 
     ### Author data
     if args.author_data:
@@ -242,13 +242,17 @@ def main():
             ensure_referential_integrity(df_paper, df_author, inplace=True,
                                          right_col='paper_id')
 
-        with TrackChanges(df_annotation, desc="Ref. Int. (annotations -> papers)", logfile=logfile):
-            ensure_referential_integrity(df_annotation, df_paper, inplace=True, left_col='paper_id')
+        if args.annotation_data:
+            # Remove annotations whose corresponding paper has been removed
+            with TrackChanges(df_annotation, desc="Ref. Int. (annotations -> papers)", logfile=logfile):
+                ensure_referential_integrity(df_annotation, df_paper, inplace=True, left_col='paper_id')
 
         if args.min_papers_per_author:
             with TrackChanges(df_author, desc=f"Ensure min papers per author: {args.min_papers_per_author}", logfile=logfile):
                 ensure_min_count_constraint(df_author, "author", args.min_papers_per_author, inplace=True)
-        # df_author.reset_index(inplace=True)
+
+        # But now don't remove papers that don't hvae an author anymore
+        # as we don't want to ignore those!
 
 
     ### Reference data
