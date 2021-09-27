@@ -50,10 +50,6 @@ Counter({'MedlineTANorm': 59730, 'DOI': 59730, 'ISSN': 59730, 'LANGUAGE': 59730,
 (venv) ubuntu@q-aktiv:~/git/harvesting-tools$ python3 from_qgraph/harvest_preprints_jsonl.py /mnt/2021_covid++/download --save /mnt/2021_covid++/preprints_rel_unmapped_mesh_ids
 ```
 
-#### Notes
-
-- MESH annotations are still identifiers () and not terms (concepts)... need to be mapped
-
 ### Resolve MESH Identifiers from preprints to MeSH main subject headings (in text format)
 
 - MeSH identifiers of preprints are mapped to MeSH descriptors (concepts) with the mesh_identifiers.R script.
